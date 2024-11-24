@@ -1,33 +1,11 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import axiosApi from '../../axiosAPI';
-import { Category, NewCategory } from '../../types';
+import { Category, NewCategory, Transaction } from '../../types';
 
-export const fetchAllCategories = createAsyncThunk<Category[], void>(
-  'categories/fetchAllCategories',  // action type
-  async (_arg, thunkAPI) => {
-    try {
-      const response: { data: Record<string, Category> | null } = await axiosApi.get('/categories.json');
-      const categoriesList = response.data;
-
-      console.log("Fetched categories:", categoriesList);
-
-      if (categoriesList === null) {
-        return [];
-      }
-      const categories = Object.keys(categoriesList).map((key) => {
-        return {
-          ...categoriesList[key],
-          id: key
-        };
-      });
-
-      return categories;
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-      return thunkAPI.rejectWithValue('Failed to fetch categories');
-    }
-  }
-);
+export const fetchCategories = createAsyncThunk('categories/fetchCategories', async () => {
+  const response = await axiosApi.get('/categories.json');
+  return response.data;
+});
 
 export const deleteOneCategory = createAsyncThunk<void, string>(
   'categories/deleteOneCategory',
@@ -59,3 +37,67 @@ export const editCategory = createAsyncThunk(
     return response.data;
   }
 );
+
+// Получение всех транзакций
+export const fetchTransactions = createAsyncThunk<Transaction[]>(
+  'transactions/fetchTransactions',
+  async (_, thunkAPI) => {
+    try {
+      const response = await axiosApi.get('/transactions.json');
+      const transactionsList = response.data;
+
+      if (!transactionsList) return [];
+
+      const transactions = Object.keys(transactionsList).map((key) => ({
+        id: key,
+        ...transactionsList[key],
+      }));
+
+      return transactions;
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      return thunkAPI.rejectWithValue('Failed to fetch transactions');
+    }
+  }
+);
+
+// Добавление транзакции
+export const createTransaction = createAsyncThunk<void, Transaction>(
+  'transactions/createTransaction',
+  async (transaction, thunkAPI) => {
+    try {
+      await axiosApi.post('/transactions.json', transaction);
+    } catch (error) {
+      console.error('Error creating transaction:', error);
+      return thunkAPI.rejectWithValue('Failed to create transaction');
+    }
+  }
+);
+
+// Удаление транзакции
+export const deleteTransaction = createAsyncThunk<void, string>(
+  'transactions/deleteTransaction',
+  async (transactionId, thunkAPI) => {
+    try {
+      await axiosApi.delete(`/transactions/${transactionId}.json`);
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+      return thunkAPI.rejectWithValue('Failed to delete transaction');
+    }
+  }
+);
+
+// Экшен для редактирования транзакции
+export const editTransaction = createAsyncThunk(
+  'transactions/editTransaction',
+  async (updatedTransaction: Transaction, { rejectWithValue }) => {
+    try {
+      // Например, обновляем данные транзакции в Firebase
+      const response = await axiosApi.put(`/transactions/${updatedTransaction.id}.json`, updatedTransaction);
+      return response.data;
+    } catch {
+      return rejectWithValue('Failed to update transaction');
+    }
+  }
+);
+
