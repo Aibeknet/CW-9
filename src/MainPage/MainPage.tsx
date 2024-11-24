@@ -8,6 +8,7 @@ const HomePage: React.FC = () => {
   console.log(transactions);
 
   const [totalAmount, setTotalAmount] = useState<number>(0);
+  const [isEmpty, setIsEmpty] = useState<boolean>(transactions.length === 0);
 
   useEffect(() => {
     const total = transactions.reduce((acc, transaction) => {
@@ -19,11 +20,16 @@ const HomePage: React.FC = () => {
       return acc;
     }, 0);
     setTotalAmount(total);
+
+    setIsEmpty(transactions.length === 0);
   }, [transactions]);
 
   return (
     <>
       <h3>Total: {totalAmount.toFixed(2)} KGS</h3>
+
+      {isEmpty && <p>Add a transaction to get started</p>}
+
       <TransactionsPage />
     </>
   );
