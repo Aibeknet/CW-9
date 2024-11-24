@@ -1,12 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CategoryForm from './CategoryForm';
 import Modal from '../UI/Modal/Modal.tsx';
-
-interface Category {
-  id: number;
-  name: string;
-  type: 'income' | 'expense';
-}
+import axiosApi from '../../axiosAPI';
+import { Category } from '../../types.ts';
 
 const CategoriesPage: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -14,24 +10,43 @@ const CategoriesPage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentCategory, setCurrentCategory] = useState<Category | null>(null);
 
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axiosApi.get('/categories.json');
+        const categoriesList = response.data;
+        if (categoriesList) {
+          const categoriesArray = Object.keys(categoriesList).map((key) => ({
+            id: key,
+            name: categoriesList[key].name,
+            type: categoriesList[key].type,
+          }));
+          setCategories(categoriesArray);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
-  const handleSaveCategory = (newCategory: { name: string; type: 'income' | 'expense' }) => {
+  const handleSaveCategory = async (newCategory: { name: string; type: 'income' | 'expense' }) => {
     if (isEditing && currentCategory) {
+      await axiosApi.put(`/categories/${currentCategory.id}.json`, newCategory);
       setCategories((prevCategories) =>
         prevCategories.map((category) =>
           category.id === currentCategory.id
-            ? { ...category, name: newCategory.name, type: newCategory.type }
+            ? { ...category, ...newCategory }
             : category
         )
       );
     } else {
-
-      const newCategoryWithId = {
-        ...newCategory,
-        id: categories.length + 1,
-      };
+      const response = await axiosApi.post('/categories.json', newCategory);
+      const newCategoryWithId = { ...newCategory, id: response.data.name };
       setCategories((prevCategories) => [...prevCategories, newCategoryWithId]);
     }
     closeModal();
@@ -40,12 +55,13 @@ const CategoriesPage: React.FC = () => {
   const handleEditCategory = (category: Category) => {
     setCurrentCategory(category);
     setIsEditing(true);
-    setIsModalOpen(true);
+    openModal();
   };
 
-  const handleDeleteCategory = (categoryId: number) => {
+  const handleDeleteCategory = async (categoryId: string) => {
     const confirmed = window.confirm('Are you sure you want to delete this category?');
     if (confirmed) {
+      await axiosApi.delete(`/categories/${categoryId}.json`);
       setCategories((prevCategories) => prevCategories.filter((category) => category.id !== categoryId));
     }
   };
@@ -64,7 +80,6 @@ const CategoriesPage: React.FC = () => {
           Add New Category
         </button>
       </div>
-
 
       <ul className="list-group mt-3">
         {categories.length > 0 ? (

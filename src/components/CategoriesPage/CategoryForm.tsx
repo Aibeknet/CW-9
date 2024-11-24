@@ -22,6 +22,8 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ onSave, onClose, initialCat
     onSave(category);
   };
 
+  const isSaveDisabled = !categoryName.trim();
+
   return (
     <div>
       <div className="mb-3">
@@ -49,7 +51,13 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ onSave, onClose, initialCat
       </div>
       <div className="d-flex justify-content-between">
         <button className="btn btn-secondary" onClick={onClose}>Close</button>
-        <button className="btn btn-primary" onClick={handleSave}>Save Category</button>
+        <button
+          className="btn btn-primary"
+          onClick={handleSave}
+          disabled={isSaveDisabled}
+        >
+          Save Category
+        </button>
       </div>
     </div>
   );

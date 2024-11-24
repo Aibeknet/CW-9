@@ -1,7 +1,7 @@
-// src/features/transactionsSlice.ts
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axiosApi from '../../axiosAPI';
 import { Transaction } from '../../types';
+import { editTransaction } from '../thunks/trackerThunk.ts';
 
 interface TransactionsState {
   transactions: Transaction[];
@@ -15,9 +15,8 @@ const initialState: TransactionsState = {
   error: null,
 };
 
-// Получение всех транзакций
 export const fetchTransactions = createAsyncThunk<Transaction[]>(
-  'transactions/fetchTransactions',
+  '/fetchTransactions',
   async (_, thunkAPI) => {
     try {
       const response = await axiosApi.get('/transactions.json');
@@ -25,9 +24,8 @@ export const fetchTransactions = createAsyncThunk<Transaction[]>(
 
       if (!transactionsList) return [];
 
-      // Преобразуем данные в массив
       const transactions = Object.keys(transactionsList).map((key) => ({
-        id: key, // Уникальный id от Firebase
+        id: key,
         ...transactionsList[key],
       }));
 
@@ -44,12 +42,11 @@ export const createTransaction = createAsyncThunk<Transaction, Transaction>(
   async (transaction, thunkAPI) => {
     try {
       const response = await axiosApi.post('/transactions.json', transaction);
-      console.log("Firebase response:", response); // Выводим ответ Firebase для проверки
+      console.log("Firebase response:", response);
 
-      // Создаем новый объект, добавляя id только если оно не существует в transaction
       const newTransaction = {
         ...transaction,
-        id: response.data.name, // Это ID, возвращаемое Firebase
+        id: response.data.name,
       };
 
       return newTransaction;
@@ -61,28 +58,25 @@ export const createTransaction = createAsyncThunk<Transaction, Transaction>(
 );
 
 
-// Редактирование транзакции
-export const editTransaction = createAsyncThunk<Transaction, Transaction>(
-  'transactions/editTransaction',
-  async (transaction, thunkAPI) => {
-    try {
-      // Мы не добавляем новый ID, а просто обновляем данные
-      await axiosApi.put(`/transactions/${transaction.id}.json`, transaction);
-      return transaction; // Возвращаем обновленный объект транзакции
-    } catch (error) {
-      console.error('Error editing transaction:', error);
-      return thunkAPI.rejectWithValue('Failed to edit transaction');
-    }
-  }
-);
+// export const editTransaction = createAsyncThunk<Transaction, Transaction>(
+//   'transactions/editTransaction',
+//   async (transaction, thunkAPI) => {
+//     try {
+//       await axiosApi.put(`/transactions/${transaction.id}.json`, transaction);
+//       return transaction;
+//     } catch (error) {
+//       console.error('Error editing transaction:', error);
+//       return thunkAPI.rejectWithValue('Failed to edit transaction');
+//     }
+//   }
+// );
 
-// Удаление транзакции
 export const deleteTransaction = createAsyncThunk<string, string>(
   'transactions/deleteTransaction',
   async (transactionId, thunkAPI) => {
     try {
       await axiosApi.delete(`/transactions/${transactionId}.json`);
-      return transactionId; // Возвращаем только ID удаленной транзакции
+      return transactionId;
     } catch (error) {
       console.error('Error deleting transaction:', error);
       return thunkAPI.rejectWithValue('Failed to delete transaction');
@@ -107,20 +101,20 @@ export const transactionsSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      // Создание транзакции
+
       .addCase(createTransaction.fulfilled, (state, action) => {
-        state.transactions.push(action.payload); // Добавляем созданную транзакцию в массив
+        state.transactions.push(action.payload);
       })
-      // Редактирование транзакции
+
       .addCase(editTransaction.fulfilled, (state, action) => {
         const index = state.transactions.findIndex((t) => t.id === action.payload.id);
         if (index !== -1) {
-          state.transactions[index] = action.payload; // Обновляем транзакцию
+          state.transactions[index] = action.payload;
         }
       })
-      // Удаление транзакции
+
       .addCase(deleteTransaction.fulfilled, (state, action) => {
-        state.transactions = state.transactions.filter((t) => t.id !== action.payload); // Удаляем транзакцию по ID
+        state.transactions = state.transactions.filter((t) => t.id !== action.payload);
       });
   },
 });

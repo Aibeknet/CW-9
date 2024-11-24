@@ -2,7 +2,6 @@ export interface Category {
   id: string;
   type: 'income' | 'expense';
   name: string;
-  createdAt: string;
 }
 
 export interface NewCategory {
@@ -10,4 +9,11 @@ export interface NewCategory {
   name: string;
 }
 
+export interface Transaction {
+  id: string;
+  amount: number;
+  createdAt: string;
+  categoryId: string;
+  type: 'income' | 'expense';
+}
 
